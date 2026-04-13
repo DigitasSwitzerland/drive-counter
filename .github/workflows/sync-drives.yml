@@ -1,4 +1,4 @@
-# Drive counter sync workflow
+# Drive counter sync workflow v2
 name: Sync Drives
 
 on:

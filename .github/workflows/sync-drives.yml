@@ -1,0 +1,38 @@
+name: Sync Drives
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch from webhook.site
+        run: |
+          curl -s "https://webhook.site/token/${{ secrets.WEBHOOK_TOKEN_ID }}/requests?sorting=newest&page=1" \
+            -H "Api-Key: ${{ secrets.WEBHOOK_API_KEY }}" \
+            -o raw.json
+
+      - name: Parse and write drives.json
+        run: |
+          COUNT=$(python3 -c "
+          import json
+          data = json.load(open('raw.json'))
+          latest = data['data'][0]
+          content = json.loads(latest['content'])
+          print(content['total_number_of_drives'])
+          ")
+          mkdir -p data
+          echo "{\"total_number_of_drives\": $COUNT, \"last_updated\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/drives.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/drives.json
+          git diff --staged --quiet || git commit -m "Update drive count"
+          git push

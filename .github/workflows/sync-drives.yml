@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          fetch-depth: 0
 
       - name: Fetch from webhook.site
         run: |
@@ -38,10 +38,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git fetch origin main
-          git reset --hard origin/main
-          mkdir -p data
-          echo "{\"total_number_of_drives\": $(cat data/drives.json | python3 -c "import json,sys; print(json.load(sys.stdin)['total_number_of_drives'])"), \"last_updated\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/drives.json
           git add data/drives.json
           git diff --staged --quiet || git commit -m "Update drive count"
-          git push origin main
+          git push --force origin main
